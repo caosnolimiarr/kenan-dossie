@@ -207,6 +207,7 @@ main { padding: calc(var(--top) + 12px) 18px 90px; overflow-x: clip; }
   appearance: none; -webkit-appearance: none; border: 0; background: none; margin: 0;
   width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px;
   padding: 18px 22px; font: inherit; color: inherit; text-align: left; cursor: pointer;
+  -webkit-user-select: none; user-select: none;
 }
 .acc-btn > span:first-child { font-family: var(--display); font-size: 1.75rem; font-weight: 500; color: var(--accent); line-height: 1.12; }
 .acc-btn:hover { background: var(--glow); }
@@ -218,9 +219,11 @@ main { padding: calc(var(--top) + 12px) 18px 90px; overflow-x: clip; }
 }
 .acc-btn[aria-expanded="true"] .chev { transform: rotate(-135deg); }
 
-.panel { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .35s ease; }
-.panel.open { grid-template-rows: 1fr; }
-.inner { overflow: hidden; min-height: 0; }
+/* Sem JavaScript (ou se ele falhar), tudo fica visível.
+   O script fecha/abre os painéis medindo a altura (funciona em qualquer navegador). */
+.panel { overflow: hidden; transition: height .3s ease; }
+.panel[hidden] { display: none; }
+.inner { min-height: 0; }
 .body { padding: 4px 22px 26px; }
 .body > :first-child { margin-top: 0; }
 .body p { margin: 0 0 1em; max-width: 66ch; }
