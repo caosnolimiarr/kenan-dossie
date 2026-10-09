@@ -4,6 +4,10 @@
   var root = document.documentElement;
   var KEY = 'kenan-dossie-theme';
 
+  /* Avisa o CSS que o JavaScript está rodando (libera o recolher/expandir) */
+  root.classList.add('js');
+  if (window.console && console.info) console.info('Dossiê Kenan — build v4 carregado');
+
   /* ---------- Tema (aplicado antes da pintura, sem piscar) ---------- */
   function lerTema() {
     try { return localStorage.getItem(KEY); } catch (e) { return null; }
@@ -26,6 +30,13 @@
     var reduzir = window.matchMedia('(prefers-reduced-motion: reduce)');
     var desktop = window.matchMedia('(min-width: 960px)');
 
+    /* ---------- Retrato: se a foto não carregou, mostra o monograma ---------- */
+    var foto = document.querySelector('.frame img');
+    if (foto && foto.complete && foto.naturalWidth === 0) {
+      foto.closest('.portrait').classList.add('noimg');
+      foto.remove();
+    }
+
     /* ---------- Botão de tema ---------- */
     function atualizarBotaoTema() {
       var escuro = root.getAttribute('data-theme') === 'dark';
@@ -40,20 +51,41 @@
     });
     atualizarBotaoTema();
 
-    /* ---------- Accordion ---------- */
-    function definir(sec, abrir) {
+    /* ---------- Accordion (altura medida em JS; painel fechado fica com [hidden]) ---------- */
+    function definir(sec, abrir, animar) {
       var btn = sec.querySelector('.acc-btn');
       var painel = sec.querySelector('.panel');
       btn.setAttribute('aria-expanded', abrir ? 'true' : 'false');
-      painel.classList.toggle('open', abrir);
       sec.classList.toggle('is-open', abrir);
-      if (abrir) { painel.removeAttribute('inert'); } else { painel.setAttribute('inert', ''); }
+      clearTimeout(painel._t);
+
+      if (!animar || reduzir.matches) {
+        painel.hidden = !abrir;
+        painel.style.height = '';
+        return;
+      }
+      if (abrir) {
+        painel.hidden = false;
+        painel.style.height = '0px';
+        void painel.offsetHeight;
+        painel.style.height = painel.scrollHeight + 'px';
+        painel._t = setTimeout(function () { painel.style.height = ''; }, 330);
+      } else {
+        painel.style.height = painel.getBoundingClientRect().height + 'px';
+        void painel.offsetHeight;
+        painel.style.height = '0px';
+        painel._t = setTimeout(function () { painel.hidden = true; painel.style.height = ''; }, 330);
+      }
     }
     secoes.forEach(function (sec) {
-      definir(sec, sec.getAttribute('data-open') !== 'false');
-      sec.querySelector('.acc-btn').addEventListener('click', function () {
-        definir(sec, this.getAttribute('aria-expanded') !== 'true');
-      });
+      definir(sec, sec.getAttribute('data-open') !== 'false', false);
+    });
+    /* delegação: um único ouvinte cobre todos os títulos */
+    document.addEventListener('click', function (e) {
+      var btn = e.target.closest ? e.target.closest('.acc-btn') : null;
+      if (!btn) return;
+      var sec = btn.closest('.sec');
+      if (sec) definir(sec, btn.getAttribute('aria-expanded') !== 'true', true);
     });
 
     /* ---------- Menu retrátil (celular e tablet) ---------- */
@@ -76,7 +108,7 @@
     function irPara(id, atualizarHash) {
       var alvo = document.getElementById(id);
       if (!alvo) return;
-      if (alvo.classList.contains('sec')) definir(alvo, true);
+      if (alvo.classList.contains('sec')) definir(alvo, true, true);
       alvo.scrollIntoView({ behavior: reduzir.matches ? 'auto' : 'smooth', block: 'start' });
       if (atualizarHash) history.replaceState(null, '', '#' + id);
     }
